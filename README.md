@@ -14,10 +14,30 @@ Urban Threads is a production-grade, database-backed e-commerce platform built f
 
 ---
 
-## 2. PostgreSQL Schema & Entity Relationships
+## 2. PostgreSQL Schema & Entity Relationship Diagram (ERD)
 
 The schema is maintained in `src/server/db/schema.sql`:
 
+```mermaid
+erDiagram
+    USERS ||--o{ ADDRESSES : "has many"
+    USERS ||--o{ ORDERS : "places"
+    USERS ||--o{ CARTS : "owns"
+    USERS ||--o{ AUDIT_LOGS : "performed by"
+    
+    CATEGORIES ||--o{ PRODUCTS : "contains"
+    PRODUCTS ||--o{ PRODUCT_VARIANTS : "has many"
+    
+    CARTS ||--o{ CART_ITEMS : "contains"
+    PRODUCT_VARIANTS ||--o{ CART_ITEMS : "referenced by"
+    
+    ORDERS ||--o{ ORDER_ITEMS : "consists of"
+    PRODUCT_VARIANTS ||--o{ ORDER_ITEMS : "purchased in"
+    ORDERS ||--o{ INVENTORY_LOGS : "generates"
+    PRODUCT_VARIANTS ||--o{ INVENTORY_LOGS : "logs changes"
+```
+
+### Table Definitions & Invariants:
 1. **`users`**: Customer & Admin accounts with role constraints (`customer`, `admin`).
 2. **`addresses`**: Customer address book with default address flags.
 3. **`categories`**: Streetwear categories (`new-arrivals`, `men`, `women`, `accessories`, `sale`).
@@ -84,4 +104,37 @@ All 27 automated tests pass across 10 test suites:
   - `idempotencyDuplicateCheckout.test.ts`: Replayed checkout requests return cached order without creating duplicates or double-deducting stock.
   - `cancellationStockRestore.test.ts`: Cancellation restores inventory exactly once; repeat cancellation rejected.
 - **End-to-End**: Full customer-to-admin lifecycle: Registration -> Search -> Variant Selection -> Cart -> Server Pricing Quote -> Checkout -> Empty Cart -> Order Tracking -> Admin Order Fulfillment.
+
+---
+
+## 6. Environment Variables Reference
+
+A documented `.env.example` is provided:
+
+| Variable | Description | Default / Example |
+| :--- | :--- | :--- |
+| `PORT` | HTTP port the Express server listens on | `5000` |
+| `NODE_ENV` | Application environment (`development` / `production`) | `production` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:password@localhost:5432/urban_threads_db` |
+| `JWT_SECRET` | Secret key for signing HMAC-SHA256 JWT auth tokens | `your_jwt_secret_key_here` |
+| `JWT_EXPIRES_IN` | JWT expiration duration | `7d` |
+| `CORS_ORIGIN` | Allowed cross-origin domain for Vite dev server | `http://localhost:3000` |
+
+---
+
+## 7. Known Limitations & Production Roadmap
+
+1. **Payment Gateway Integration:** The current payment gateway operates in sandbox simulation mode. For full production deployment, webhook handlers for Stripe/PayPal can be plugged into `orderService.processCheckout`.
+2. **Multi-Currency Support:** The platform currently operates in USD ($). Future iterations can integrate dynamic currency conversion rates based on customer geolocation.
+3. **Image Storage CDN:** Product images are currently served from high-resolution Unsplash CDNs. In an enterprise environment, an S3/Cloudflare R2 bucket with automated image resizing would be utilized.
+
+---
+
+## 8. Documentation & Submission Assets
+
+- **Technical Report:** [`TECHNICAL_REPORT.md`](file:///c:/Users/HP/Downloads/Alson%20ai/TECHNICAL_REPORT.md) (covers architecture, FSM, concurrency controls, test evidence, and video walkthrough script).
+- **OpenAPI 3.0 Specification:** [`docs/openapi.yaml`](file:///c:/Users/HP/Downloads/Alson%20ai/docs/openapi.yaml).
+- **PostgreSQL Schema:** [`src/server/db/schema.sql`](file:///c:/Users/HP/Downloads/Alson%20ai/src/server/db/schema.sql).
+- **Test Suite:** [`tests/`](file:///c:/Users/HP/Downloads/Alson%20ai/tests/) (10 test files, 27 passing tests).
+
 
