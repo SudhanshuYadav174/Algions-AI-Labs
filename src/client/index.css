@@ -20,6 +20,38 @@
   letter-spacing: 0.04em;
 }
 
+/* Brand Marquee Custom Logo Fonts */
+.font-nova {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.font-forge {
+  font-family: 'Pacifico', cursive;
+  letter-spacing: 0.02em;
+}
+
+.font-flux {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  text-transform: lowercase;
+}
+
+.font-beam {
+  font-family: 'Caveat', cursive;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-style: italic;
+}
+
+.font-echo {
+  font-family: 'Righteous', cursive;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+
 /* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
