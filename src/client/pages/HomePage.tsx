@@ -65,14 +65,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onSelectProduct 
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+
+  const SLIDE_DURATION = 4000; // 4 seconds per slide
 
   // Animation references
   const heroContainerRef = useRef<HTMLDivElement>(null);
   const slideImageRefs = useRef<(HTMLImageElement | null)[]>([]);
   const heroContentRef = useRef<HTMLDivElement>(null);
   const progressBarRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const progressTweenRef = useRef<gsap.core.Tween | null>(null);
 
   const featuredSectionRef = useRef<HTMLElement>(null);
   const categoriesSectionRef = useRef<HTMLElement>(null);
@@ -93,66 +93,59 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onSelectProduct 
     loadFeatured();
   }, []);
 
-  // 2. Animate Slide Transitions with GSAP
+  // 2. Continuous Auto-slide progression (advances every 4 seconds)
   useEffect(() => {
-    const activeImg = slideImageRefs.current[activeSlide];
-    const otherImgs = slideImageRefs.current.filter((_, idx) => idx !== activeSlide);
+    const timer = setTimeout(() => {
+      setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, SLIDE_DURATION);
 
-    // Fade out other images
-    if (otherImgs.length > 0) {
-      gsap.to(otherImgs, {
-        opacity: 0,
-        duration: 0.9,
-        ease: 'power2.inOut',
-      });
-    }
+    return () => clearTimeout(timer);
+  }, [activeSlide]);
 
-    // Zoom & Fade-in active image
-    if (activeImg) {
-      gsap.fromTo(
-        activeImg,
-        { scale: 1.08, opacity: 0 },
-        { scale: 1, opacity: 0.45, duration: 1.2, ease: 'power2.out' }
-      );
-    }
-
-    // Stagger in hero textual elements
-    if (heroContentRef.current) {
-      const elements = heroContentRef.current.querySelectorAll('.hero-animate-item');
-      gsap.fromTo(
-        elements,
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out' }
-      );
-    }
-
-    // Reset and animate active progress bar for 5 seconds
+  // 3. GSAP animations when activeSlide changes
+  useEffect(() => {
+    // A. Animate active progress bar from 0% to 100%
     progressBarRefs.current.forEach((bar, idx) => {
       if (!bar) return;
+      gsap.killTweensOf(bar);
       if (idx === activeSlide) {
-        if (progressTweenRef.current) progressTweenRef.current.kill();
-        gsap.set(bar, { width: '0%' });
-        progressTweenRef.current = gsap.to(bar, {
-          width: '100%',
-          duration: 5,
-          ease: 'none',
-        });
+        gsap.fromTo(
+          bar,
+          { width: '0%' },
+          {
+            width: '100%',
+            duration: SLIDE_DURATION / 1000,
+            ease: 'none',
+          }
+        );
       } else {
         gsap.set(bar, { width: '0%' });
       }
     });
+
+    // B. Subtle Ken Burns Zoom on active hero image
+    const activeImg = slideImageRefs.current[activeSlide];
+    if (activeImg) {
+      gsap.killTweensOf(activeImg);
+      gsap.fromTo(
+        activeImg,
+        { scale: 1.06 },
+        { scale: 1.0, duration: SLIDE_DURATION / 1000, ease: 'power1.out' }
+      );
+    }
+
+    // C. Stagger in hero textual elements
+    if (heroContentRef.current) {
+      const elements = heroContentRef.current.querySelectorAll('.hero-animate-item');
+      if (elements.length > 0) {
+        gsap.fromTo(
+          elements,
+          { y: 25, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: 'power2.out' }
+        );
+      }
+    }
   }, [activeSlide]);
-
-  // 3. Auto slide progression (changes every 5 seconds)
-  useEffect(() => {
-    if (isPaused) return;
-
-    const timer = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [isPaused]);
 
   // 4. GSAP ScrollTrigger Scroll Animations
   useEffect(() => {
@@ -250,33 +243,38 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onSelectProduct 
       {/* 1. HERO SECTION WITH 3 AUTO-SLIDING PHOTOS & GSAP ANIMATIONS */}
       <section
         ref={heroContainerRef}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
         className="relative min-h-[600px] lg:min-h-[700px] flex items-center bg-[#0a0a0a] overflow-hidden border-b border-[#222222]"
       >
-        {/* Background Photos Layer with GSAP Crossfade & Zoom */}
-        <div className="absolute inset-0 z-0">
+        {/* Background Photos Layer with Silky CSS Crossfade & GSAP Ken Burns Zoom */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
           {HERO_SLIDES.map((slide, idx) => (
-            <img
+            <div
               key={slide.id}
-              ref={(el) => (slideImageRefs.current[idx] = el)}
-              src={slide.image}
-              alt={slide.headlineFirst}
-              className={`absolute inset-0 w-full h-full object-cover object-right md:object-center ${
-                idx === activeSlide ? 'opacity-45' : 'opacity-0'
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                idx === activeSlide ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               }`}
-            />
+            >
+              <img
+                ref={(el) => (slideImageRefs.current[idx] = el)}
+                src={slide.image}
+                alt={slide.headlineFirst}
+                className="w-full h-full object-cover object-right md:object-center opacity-45 will-change-transform"
+              />
+            </div>
           ))}
 
           {/* Atmospheric Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/85 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-[#0a0a0a]/40" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/85 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0a0a0a] via-transparent to-[#0a0a0a]/40 pointer-events-none" />
         </div>
 
         {/* Dynamic Hero Copy Layer */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
-          <div ref={heroContentRef} className="max-w-xl space-y-6">
-            
+        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+          <div
+            key={activeSlide}
+            ref={heroContentRef}
+            className="max-w-xl space-y-6"
+          >
             {/* Tagline & Collection Badge */}
             <div className="hero-animate-item flex items-center space-x-3">
               <span className="bg-[#e63946] text-white text-[10px] font-black uppercase px-2 py-0.5 tracking-wider">
@@ -321,7 +319,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onSelectProduct 
         </div>
 
         {/* Interactive 3-Bar Slide Indicators & Timer Progress */}
-        <div className="absolute bottom-8 left-4 sm:left-8 flex items-center space-x-3 z-20">
+        <div className="absolute bottom-8 left-4 sm:left-8 flex items-center space-x-3 z-30">
           {HERO_SLIDES.map((slide, idx) => (
             <button
               key={slide.id}
@@ -330,16 +328,18 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onSelectProduct 
               aria-label={`Go to slide ${idx + 1}`}
             >
               <div className="relative w-12 sm:w-16 h-1 bg-white/20 overflow-hidden rounded-full">
-                {/* Active progress fill */}
+                {/* Active progress fill animated via GSAP */}
                 <div
                   ref={(el) => (progressBarRefs.current[idx] = el)}
-                  className={`absolute left-0 top-0 bottom-0 bg-white ${
-                    idx === activeSlide ? 'opacity-100' : 'opacity-0'
-                  }`}
-                  style={{ width: idx === activeSlide ? '0%' : '0%' }}
+                  className="absolute left-0 top-0 bottom-0 bg-white"
+                  style={{ width: '0%' }}
                 />
               </div>
-              <span className="text-[9px] font-bold tracking-widest uppercase mt-1 text-gray-400 group-hover:text-white transition-colors">
+              <span
+                className={`text-[9px] font-bold tracking-widest uppercase mt-1 transition-colors ${
+                  idx === activeSlide ? 'text-white' : 'text-gray-400 group-hover:text-white'
+                }`}
+              >
                 0{idx + 1}
               </span>
             </button>
@@ -347,7 +347,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onSelectProduct 
         </div>
 
         {/* Manual Arrow Controls */}
-        <div className="absolute bottom-8 right-4 sm:right-8 flex items-center space-x-2 z-20">
+        <div className="absolute bottom-8 right-4 sm:right-8 flex items-center space-x-2 z-30">
           <button
             onClick={handlePrevSlide}
             className="w-10 h-10 border border-[#333333] bg-[#121212]/80 hover:bg-white text-gray-300 hover:text-black flex items-center justify-center transition-colors backdrop-blur-sm"
