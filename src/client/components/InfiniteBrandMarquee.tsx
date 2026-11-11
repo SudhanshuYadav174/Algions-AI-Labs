@@ -128,3 +128,4 @@ export const InfiniteBrandMarquee: React.FC = () => {
     </section>
   );
 };
+
