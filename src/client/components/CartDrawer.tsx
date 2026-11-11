@@ -188,3 +188,4 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onNavigate }) => {
     </div>
   );
 };
+

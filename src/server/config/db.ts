@@ -23,3 +23,4 @@ export const query = (text: string, params?: any[]) => {
 export const getClient = () => {
   return pool.connect();
 };
+

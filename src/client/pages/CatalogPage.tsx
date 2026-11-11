@@ -319,3 +319,4 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
     </div>
   );
 };
+

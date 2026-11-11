@@ -36,3 +36,4 @@ export function errorHandler(
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
 }
+

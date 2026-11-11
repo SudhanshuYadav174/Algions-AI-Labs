@@ -25,3 +25,4 @@ describe('Unit: Order State Transition Machine', () => {
     expect(err.message).toContain('Invalid order state transition from "delivered" to "placed"');
   });
 });
+

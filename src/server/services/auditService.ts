@@ -36,3 +36,4 @@ export async function logAudit(
     // In production audit logging failure can either throw or log depending on compliance policy
   }
 }
+

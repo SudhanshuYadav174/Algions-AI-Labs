@@ -76,3 +76,4 @@ describe('Integration: Authentication, RBAC, and Customer Data Isolation', () =>
     expect(res.body.order.id).toBe(customer1OrderId);
   });
 });
+

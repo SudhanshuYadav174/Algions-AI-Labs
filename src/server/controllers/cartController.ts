@@ -251,3 +251,4 @@ export async function clearCart(req: Request, res: Response, next: NextFunction)
     next(error);
   }
 }
+

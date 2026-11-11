@@ -1,20 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { AuthProvider } from './context/AuthContext.js';
 import { CartProvider } from './context/CartContext.js';
 import { Navbar } from './components/Navbar.js';
 import { Footer } from './components/Footer.js';
 import { CartDrawer } from './components/CartDrawer.js';
 import { AuthModal } from './components/AuthModal.js';
-
 import { HomePage } from './pages/HomePage.js';
-import { CatalogPage } from './pages/CatalogPage.js';
-import { ProductDetailPage } from './pages/ProductDetailPage.js';
-import { CheckoutPage } from './pages/CheckoutPage.js';
-import { OrderSuccessPage } from './pages/OrderSuccessPage.js';
-import { CustomerProfilePage } from './pages/CustomerProfilePage.js';
-import { OrderHistoryPage } from './pages/OrderHistoryPage.js';
-import { AdminDashboardPage } from './pages/AdminDashboardPage.js';
-import { AboutPage } from './pages/AboutPage.js';
+
+// Code-split pages to optimize production bundle size
+const CatalogPage = lazy(() => import('./pages/CatalogPage.js').then(m => ({ default: m.CatalogPage })));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage.js').then(m => ({ default: m.ProductDetailPage })));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage.js').then(m => ({ default: m.CheckoutPage })));
+const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage.js').then(m => ({ default: m.OrderSuccessPage })));
+const CustomerProfilePage = lazy(() => import('./pages/CustomerProfilePage.js').then(m => ({ default: m.CustomerProfilePage })));
+const OrderHistoryPage = lazy(() => import('./pages/OrderHistoryPage.js').then(m => ({ default: m.OrderHistoryPage })));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.js').then(m => ({ default: m.AdminDashboardPage })));
+const AboutPage = lazy(() => import('./pages/AboutPage.js').then(m => ({ default: m.AboutPage })));
+
+const LoadingSpinner = () => (
+  <div className="min-h-[50vh] flex flex-col items-center justify-center text-center">
+    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mb-3"></div>
+    <span className="text-xs uppercase tracking-widest text-gray-400">Loading collection...</span>
+  </div>
+);
 
 export const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<string>('home');
@@ -47,62 +55,64 @@ export const AppContent: React.FC = () => {
 
       {/* Main Dynamic View Content */}
       <main className="flex-1">
-        {currentView === 'home' && (
-          <HomePage
-            onNavigate={navigate}
-            onSelectProduct={(p) => navigate('product-detail', { slugOrId: p.slug })}
-          />
-        )}
+        <Suspense fallback={<LoadingSpinner />}>
+          {currentView === 'home' && (
+            <HomePage
+              onNavigate={navigate}
+              onSelectProduct={(p) => navigate('product-detail', { slugOrId: p.slug })}
+            />
+          )}
 
-        {currentView === 'catalog' && (
-          <CatalogPage
-            initialCategory={viewParams.category}
-            initialQuery={viewParams.q}
-            onSelectProduct={(p) => navigate('product-detail', { slugOrId: p.slug })}
-          />
-        )}
+          {currentView === 'catalog' && (
+            <CatalogPage
+              initialCategory={viewParams.category}
+              initialQuery={viewParams.q}
+              onSelectProduct={(p) => navigate('product-detail', { slugOrId: p.slug })}
+            />
+          )}
 
-        {currentView === 'product-detail' && (
-          <ProductDetailPage
-            productSlugOrId={viewParams.slugOrId}
-            onBack={() => navigate('catalog')}
-            onNavigate={navigate}
-          />
-        )}
+          {currentView === 'product-detail' && (
+            <ProductDetailPage
+              productSlugOrId={viewParams.slugOrId}
+              onBack={() => navigate('catalog')}
+              onNavigate={navigate}
+            />
+          )}
 
-        {currentView === 'checkout' && (
-          <CheckoutPage
-            onBack={() => navigate('catalog')}
-            onOrderSuccess={(orderData) => navigate('order-success', { orderData })}
-            onOpenAuth={() => setAuthModalOpen(true)}
-          />
-        )}
+          {currentView === 'checkout' && (
+            <CheckoutPage
+              onBack={() => navigate('catalog')}
+              onOrderSuccess={(orderData) => navigate('order-success', { orderData })}
+              onOpenAuth={() => setAuthModalOpen(true)}
+            />
+          )}
 
-        {currentView === 'order-success' && (
-          <OrderSuccessPage
-            orderData={viewParams.orderData}
-            onNavigate={navigate}
-          />
-        )}
+          {currentView === 'order-success' && (
+            <OrderSuccessPage
+              orderData={viewParams.orderData}
+              onNavigate={navigate}
+            />
+          )}
 
-        {currentView === 'profile' && (
-          <CustomerProfilePage />
-        )}
+          {currentView === 'profile' && (
+            <CustomerProfilePage />
+          )}
 
-        {currentView === 'orders' && (
-          <OrderHistoryPage
-            onViewOrder={(order) => navigate('order-success', { orderData: order })}
-            onNavigate={navigate}
-          />
-        )}
+          {currentView === 'orders' && (
+            <OrderHistoryPage
+              onViewOrder={(order) => navigate('order-success', { orderData: order })}
+              onNavigate={navigate}
+            />
+          )}
 
-        {currentView === 'admin' && (
-          <AdminDashboardPage />
-        )}
+          {currentView === 'admin' && (
+            <AdminDashboardPage />
+          )}
 
-        {currentView === 'about' && (
-          <AboutPage />
-        )}
+          {currentView === 'about' && (
+            <AboutPage />
+          )}
+        </Suspense>
       </main>
 
       {/* Global Footer */}

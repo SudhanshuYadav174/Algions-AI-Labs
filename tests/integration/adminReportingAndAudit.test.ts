@@ -75,3 +75,4 @@ describe('Integration: Executive Reporting & Administrative Audit Logs (Criteria
     expect(log.new_state.reason).toContain('Seasonal warehouse restock inspection');
   });
 });
+

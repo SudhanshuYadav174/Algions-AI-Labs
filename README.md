@@ -84,3 +84,4 @@ All 27 automated tests pass across 10 test suites:
   - `idempotencyDuplicateCheckout.test.ts`: Replayed checkout requests return cached order without creating duplicates or double-deducting stock.
   - `cancellationStockRestore.test.ts`: Cancellation restores inventory exactly once; repeat cancellation rejected.
 - **End-to-End**: Full customer-to-admin lifecycle: Registration -> Search -> Variant Selection -> Cart -> Server Pricing Quote -> Checkout -> Empty Cart -> Order Tracking -> Admin Order Fulfillment.
+

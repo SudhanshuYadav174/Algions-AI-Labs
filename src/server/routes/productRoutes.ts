@@ -14,3 +14,4 @@ router.get('/categories', getCategories);
 router.get('/:slugOrId', getProductBySlugOrId);
 
 export default router;
+

@@ -72,3 +72,4 @@ describe('Integration: Cart Quantities vs Available Inventory (Criterion 6)', ()
     expect(res.body.error).toBe('Inventory limit exceeded');
   });
 });
+

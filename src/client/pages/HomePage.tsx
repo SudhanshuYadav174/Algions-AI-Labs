@@ -205,3 +205,4 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onSelectProduct 
     </div>
   );
 };
+

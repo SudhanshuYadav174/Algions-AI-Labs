@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
@@ -39,9 +40,16 @@ app.use('/api/cart', cartRoutes);
 app.use('/api', orderRoutes);
 app.use('/api/admin', adminRoutes);
 
-// In production, serve Vite client build
-if (process.env.NODE_ENV === 'production') {
-  const clientDist = path.resolve(__dirname, '../../dist/client');
+// Serve Vite client build if present
+const possibleDistPaths = [
+  path.resolve(__dirname, '../../dist/client'),
+  path.resolve(__dirname, '../client'),
+  path.resolve(process.cwd(), 'dist/client'),
+];
+
+const clientDist = possibleDistPaths.find((p) => fs.existsSync(p));
+
+if (clientDist) {
   app.use(express.static(clientDist));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
@@ -53,3 +61,4 @@ if (process.env.NODE_ENV === 'production') {
 
 // Global Error Handler
 app.use(errorHandler);
+

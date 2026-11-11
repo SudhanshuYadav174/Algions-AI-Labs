@@ -21,3 +21,4 @@ router.post('/addresses', authenticate, validateBody(addressSchema), addAddress)
 router.delete('/addresses/:id', authenticate, deleteAddress);
 
 export default router;
+

@@ -241,3 +241,4 @@ export async function getFeaturedProducts(req: Request, res: Response, next: Nex
     next(error);
   }
 }
+

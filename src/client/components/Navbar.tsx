@@ -254,3 +254,4 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, activeView, onOpenAu
     </header>
   );
 };
+

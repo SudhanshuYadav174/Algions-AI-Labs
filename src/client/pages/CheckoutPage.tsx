@@ -531,3 +531,4 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     </div>
   );
 };
+

@@ -1,0 +1,256 @@
+openapi: 3.0.3
+info:
+  title: Urban Threads E-Commerce API
+  description: Official REST API for Urban Threads high-performance streetwear drops. Implements ACID transactions, row-level locking for inventory, idempotency keys, and RBAC.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local development / production server
+paths:
+  /auth/register:
+    post:
+      summary: Register a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, fullName]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+                fullName: { type: string }
+                phone: { type: string }
+      responses:
+        '201':
+          description: User created
+        '409':
+          description: Email already registered
+
+  /auth/login:
+    post:
+      summary: Customer and Admin authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: JWT token and profile returned
+        '401':
+          description: Invalid credentials
+
+  /products:
+    get:
+      summary: Search, filter, and paginate catalog products
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: minPrice
+          in: query
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+        - name: inStock
+          in: query
+          schema: { type: boolean }
+        - name: sortBy
+          in: query
+          schema: { type: string, enum: [featured, price_asc, price_desc, newest, name_asc] }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 12 }
+      responses:
+        '200':
+          description: Paginated product list with stock
+
+  /products/{slugOrId}:
+    get:
+      summary: Get product details with size and color variants
+      parameters:
+        - name: slugOrId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Product details and variant stock
+        '404':
+          description: Product not found
+
+  /cart:
+    get:
+      summary: Get user or session cart items with stock status
+      responses:
+        '200':
+          description: Cart items and recalculated subtotal
+    delete:
+      summary: Clear entire cart
+      responses:
+        '200':
+          description: Cart cleared
+
+  /cart/items:
+    post:
+      summary: Add item to cart with stock validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [variantId, quantity]
+              properties:
+                variantId: { type: integer }
+                quantity: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Item added
+        '400':
+          description: Requested quantity exceeds available inventory
+
+  /checkout/quote:
+    post:
+      summary: Recalculate pricing, coupons, 8% tax, and shipping server-side
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [variantId, quantity]
+                    properties:
+                      variantId: { type: integer }
+                      quantity: { type: integer }
+                couponCode: { type: string }
+      responses:
+        '200':
+          description: Server recalculated quote
+
+  /checkout:
+    post:
+      summary: Execute atomic order checkout with transaction and idempotency
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items, shippingAddress]
+              properties:
+                items: { type: array }
+                shippingAddress: { type: object }
+                couponCode: { type: string }
+                idempotencyKey: { type: string }
+                simulatePaymentFailure: { type: boolean }
+      responses:
+        '201':
+          description: Order placed and stock deducted
+        '409':
+          description: Out of stock (concurrency conflict)
+        '500':
+          description: Payment failed (transaction rolled back)
+
+  /orders:
+    get:
+      summary: Customer order history (customer-isolated)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of user orders
+
+  /orders/{id}:
+    get:
+      summary: Get single order details (ownership enforced)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Order details
+        '403':
+          description: Forbidden - Customer cannot view another's order
+
+  /orders/{id}/cancel:
+    post:
+      summary: Cancel placed/paid order and restore stock exactly once
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Order cancelled and stock restored
+        '400':
+          description: Order already cancelled or non-cancellable state
+
+  /admin/reports/sales:
+    get:
+      summary: Reconciled executive revenue and status metrics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Reconciled sales summary
+        '403':
+          description: Admin privileges required
+
+  /admin/orders/{id}/status:
+    put:
+      summary: Transition order lifecycle state
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [placed, paid, packed, shipped, delivered, cancelled]
+      responses:
+        '200':
+          description: Order status updated
+        '400':
+          description: Invalid state transition
+
+  /admin/inventory/{variantId}:
+    put:
+      summary: Adjust variant stock and record audit log
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stock adjusted
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

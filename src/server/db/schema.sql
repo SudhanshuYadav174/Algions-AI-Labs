@@ -223,3 +223,4 @@ CREATE TABLE idempotency_records (
 );
 
 CREATE INDEX idx_idempotency_user ON idempotency_records(user_id);
+

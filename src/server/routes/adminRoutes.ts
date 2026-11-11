@@ -30,3 +30,4 @@ router.delete('/products/:id', deleteProduct);
 router.get('/audit-logs', getAuditLogs);
 
 export default router;
+
